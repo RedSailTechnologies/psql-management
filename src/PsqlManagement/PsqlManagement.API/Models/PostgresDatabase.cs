@@ -108,5 +108,13 @@ namespace PsqlManagement.API.Models
         /// The revoke public access.
         /// </value>
         public bool RevokePublicAccess { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the modify existing.
+        /// </summary>
+        /// <value>
+        /// The modify existing.
+        /// </value>
+        public bool ModifyExisting { get; set; }
     }
 }
