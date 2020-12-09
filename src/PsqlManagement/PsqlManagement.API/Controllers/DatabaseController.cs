@@ -213,6 +213,14 @@ namespace PsqlManagement.API.Controllers
                     {
                         dbContext.Database.ExecuteSqlRaw($"REVOKE ALL ON DATABASE \"{postgresDb.DatabaseName}\" FROM PUBLIC CASCADE;");
                     }
+
+                    if (postgresDb.AdditionalSqlCommands.Count > 0)
+                    {
+                        foreach (var sql in postgresDb.AdditionalSqlCommands)
+                        {
+                            dbContext.Database.ExecuteSqlRaw(sql);
+                        }
+                    }
                 }
             }
 

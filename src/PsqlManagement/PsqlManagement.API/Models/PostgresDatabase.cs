@@ -116,5 +116,13 @@ namespace PsqlManagement.API.Models
         /// The modify existing.
         /// </value>
         public bool ModifyExisting { get; set; }
+
+        /// <summary>
+        /// Gets or sets the additional sql commands.
+        /// </summary>
+        /// <value>
+        /// The additional sql commands.
+        /// </value>
+        public List<string> AdditionalSqlCommands { get; set; }
     }
 }
