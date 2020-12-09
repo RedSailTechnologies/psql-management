@@ -192,7 +192,7 @@ namespace PsqlManagement.API.Controllers
 
                     dbContext.Database.EnsureCreated();
 
-                    if (postgresDb.Schemas.Count > 0)
+                    if (postgresDb.Schemas != null && postgresDb.Schemas.Count > 0)
                     {
                         foreach (var schema in postgresDb.Schemas)
                         {
@@ -214,7 +214,7 @@ namespace PsqlManagement.API.Controllers
                         dbContext.Database.ExecuteSqlRaw($"REVOKE ALL ON DATABASE \"{postgresDb.DatabaseName}\" FROM PUBLIC CASCADE;");
                     }
 
-                    if (postgresDb.AdditionalSqlCommands.Count > 0)
+                    if (postgresDb.AdditionalSqlCommands != null && postgresDb.AdditionalSqlCommands.Count > 0)
                     {
                         foreach (var sql in postgresDb.AdditionalSqlCommands)
                         {
