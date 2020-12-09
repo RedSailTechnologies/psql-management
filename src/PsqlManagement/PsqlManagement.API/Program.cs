@@ -20,8 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -33,19 +31,12 @@ namespace PsqlManagement
     public class Program
     {
         /// <summary>
-        /// The cancellation token source.
-        /// </summary>
-        /// <returns></returns>
-        public static readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
-
-        /// <summary>
         /// Main.
         /// </summary>
         /// <param name="args">The args.</param>
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
-            await Task.Delay(Timeout.Infinite, CancellationTokenSource.Token).ConfigureAwait(false);
         }
 
         /// <summary>
