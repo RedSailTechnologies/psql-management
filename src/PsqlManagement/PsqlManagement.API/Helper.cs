@@ -70,7 +70,7 @@ namespace PsqlManagement.API
         /// <returns></returns>
         public static string BuildConnectionString(IDatabase database, string altDatabase = null, string altUser = null, string altPassword = null)
         {
-            return $"Server={database.Host};Database={altDatabase ?? database.DatabaseName};Port={database.Port};User Id={altUser ?? database.User};Password={altPassword ?? database.Password};Ssl Mode={database.SslMode};Pooling=false";
+            return $"Server={database.Host};Database={altDatabase ?? database.DatabaseName};Port={database.Port};User Id={altUser ?? database.User};Password={altPassword ?? database.Password};Ssl Mode={database.SslMode};Pooling=false;";
         }
     }
 }

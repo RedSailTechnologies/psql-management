@@ -108,119 +108,153 @@ namespace PsqlManagement.API.Controllers
                 return errorText;
             }
 
+            var dbExists = false;
+
             var npgsqlConnection = new NpgsqlConnection(Helper.BuildConnectionString(postgresDb, altDatabase: "postgres"));
             npgsqlConnection.Open();
-
-            var dbExists = false;
-            using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_catalog.pg_database WHERE datname='{postgresDb.DatabaseName}'", npgsqlConnection))
+            try
             {
-                using (var reader = cmd.ExecuteReader())
+
+                using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_catalog.pg_database WHERE datname='{postgresDb.DatabaseName}'", npgsqlConnection))
                 {
-                    dbExists = reader.HasRows;
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        dbExists = reader.HasRows;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                npgsqlConnection.Close();
+                throw e;
             }
 
             if (!dbExists || (dbExists && postgresDb.ModifyExisting))
             {
-                var roleExists = false;
-                var userExists = false;
                 var role = postgresDb.DatabaseName;
                 var user = postgresDb.DatabaseName;
+                try
+                {
+                    var roleExists = false;
+                    var userExists = false;
 
-                if (postgresDb.DatabaseName.Any(char.IsUpper))
-                {
-                    role += "_Role";
-                }
-                else
-                {
-                    role += "_role";
-                }
-
-                using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_roles WHERE rolname='{role}'", npgsqlConnection))
-                {
-                    using (var reader = cmd.ExecuteReader())
+                    if (postgresDb.DatabaseName.Any(char.IsUpper))
                     {
-                        roleExists = reader.HasRows;
-                    }
-                }
-
-                if (!roleExists)
-                {
-                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
-                    {
-                        new NpgsqlCommand($"CREATE ROLE \"{role}\" with NOLOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin;", npgsqlConnection).ExecuteNonQuery();
+                        role += "_Role";
                     }
                     else
                     {
-                        new NpgsqlCommand($"CREATE ROLE \"{role}\" with NOLOGIN INHERIT CREATEDB CREATEROLE SUPERUSER;", npgsqlConnection).ExecuteNonQuery();
+                        role += "_role";
                     }
-                }
 
-                var pgUser = postgresDb.User.Substring(0, postgresDb.User.IndexOf('@'));
-                new NpgsqlCommand($"GRANT \"{role}\" TO \"{pgUser}\";", npgsqlConnection).ExecuteNonQuery();
-
-                using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_roles WHERE rolname='{user}'", npgsqlConnection))
-                {
-                    using (var reader = cmd.ExecuteReader())
+                    using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_roles WHERE rolname='{role}'", npgsqlConnection))
                     {
-                        userExists = reader.HasRows;
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            roleExists = reader.HasRows;
+                        }
+                    }
+
+                    if (!roleExists)
+                    {
+                        if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                        {
+                            new NpgsqlCommand($"CREATE ROLE \"{role}\" with NOLOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin;", npgsqlConnection).ExecuteNonQuery();
+                        }
+                        else
+                        {
+                            new NpgsqlCommand($"CREATE ROLE \"{role}\" with NOLOGIN INHERIT CREATEDB CREATEROLE SUPERUSER;", npgsqlConnection).ExecuteNonQuery();
+                        }
+                    }
+
+                    var pgUser = postgresDb.User.Substring(0, postgresDb.User.IndexOf('@'));
+                    new NpgsqlCommand($"GRANT \"{role}\" TO \"{pgUser}\";", npgsqlConnection).ExecuteNonQuery();
+
+                    using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_roles WHERE rolname='{user}'", npgsqlConnection))
+                    {
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            userExists = reader.HasRows;
+                        }
+                    }
+
+                    if (!userExists)
+                    {
+                        new NpgsqlCommand($"CREATE ROLE \"{user}\" with LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}';", npgsqlConnection).ExecuteNonQuery();
+                        new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        new NpgsqlCommand($"ALTER USER \"{user}\" with LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}';", npgsqlConnection).ExecuteNonQuery();
+                        new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                    }
+
+                    if (!dbExists)
+                    {
+                        new NpgsqlCommand($"CREATE DATABASE \"{postgresDb.DatabaseName}\" TEMPLATE template0 OWNER \"{role}\";", npgsqlConnection).ExecuteNonQuery();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var host = postgresDb.Host.Substring(0, postgresDb.Host.IndexOf(".postgres"));
+                        user += $"@{host}";
                     }
                 }
-
-                if (!userExists)
+                catch (Exception e)
                 {
-                    new NpgsqlCommand($"CREATE ROLE \"{user}\" with LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}';", npgsqlConnection).ExecuteNonQuery();
-                    new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                    throw e;
                 }
-                else
+                finally
                 {
-                    new NpgsqlCommand($"ALTER USER \"{user}\" with LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}';", npgsqlConnection).ExecuteNonQuery();
-                    new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                    npgsqlConnection.Close();
                 }
 
-                if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
-                {
-                    var host = postgresDb.Host.Substring(0, postgresDb.Host.IndexOf(".postgres"));
-                    user += $"@{host}";
-                }
 
-                npgsqlConnection.Close();
-
-                using (var dbContext = new DbContext(new DbContextOptionsBuilder().UseNpgsql(Helper.BuildConnectionString(postgresDb, altUser: user, altPassword: postgresDb.NewUserPassword ?? postgresDb.Password)).Options))
+                var npgsqlConnection2 = new NpgsqlConnection(Helper.BuildConnectionString(postgresDb, altUser: user, altPassword: postgresDb.NewUserPassword ?? postgresDb.Password));
+                npgsqlConnection2.Open();
+                try
                 {
                     user = user.Substring(0, user.IndexOf('@'));
-
-                    dbContext.Database.EnsureCreated();
 
                     if (postgresDb.Schemas != null && postgresDb.Schemas.Count > 0)
                     {
                         foreach (var schema in postgresDb.Schemas)
                         {
-                            dbContext.Database.ExecuteSqlRaw($"CREATE SCHEMA IF NOT EXISTS \"{schema}\";");
-                            dbContext.Database.ExecuteSqlRaw($"GRANT ALL PRIVILEGES ON SCHEMA \"{schema}\" to \"{role}\";");
+                            new NpgsqlCommand($"CREATE SCHEMA IF NOT EXISTS \"{schema}\";", npgsqlConnection2).ExecuteNonQuery();
+                            new NpgsqlCommand($"GRANT ALL PRIVILEGES ON SCHEMA \"{schema}\" to \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
                         }
                     }
 
-                    dbContext.Database.ExecuteSqlRaw($"ALTER DATABASE \"{postgresDb.DatabaseName}\" OWNER TO \"{role}\";");
-                    dbContext.Database.ExecuteSqlRaw($"GRANT ALL PRIVILEGES ON DATABASE \"{postgresDb.DatabaseName}\" TO \"{role}\";");
-                    dbContext.Database.ExecuteSqlRaw($"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{role}\";");
-                    dbContext.Database.ExecuteSqlRaw($"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{role}\";");
-                    dbContext.Database.ExecuteSqlRaw($"GRANT ALL PRIVILEGES ON SCHEMA public to \"{role}\";");
+                    new NpgsqlCommand($"ALTER DATABASE \"{postgresDb.DatabaseName}\" OWNER TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
+                    new NpgsqlCommand($"GRANT ALL PRIVILEGES ON DATABASE \"{postgresDb.DatabaseName}\" TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
+                    new NpgsqlCommand($"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
+                    new NpgsqlCommand($"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
+                    new NpgsqlCommand($"GRANT ALL PRIVILEGES ON SCHEMA public to \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
 
-                    dbContext.Database.ExecuteSqlRaw($"REASSIGN OWNED BY \"{user}\" TO \"{role}\";");
+                    new NpgsqlCommand($"REASSIGN OWNED BY \"{user}\" TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
 
                     if (postgresDb.RevokePublicAccess)
                     {
-                        dbContext.Database.ExecuteSqlRaw($"REVOKE ALL ON DATABASE \"{postgresDb.DatabaseName}\" FROM PUBLIC CASCADE;");
+                        new NpgsqlCommand($"REVOKE ALL ON DATABASE \"{postgresDb.DatabaseName}\" FROM PUBLIC CASCADE;", npgsqlConnection2).ExecuteNonQuery();
                     }
 
                     if (postgresDb.AdditionalSqlCommands != null && postgresDb.AdditionalSqlCommands.Count > 0)
                     {
                         foreach (var sql in postgresDb.AdditionalSqlCommands)
                         {
-                            dbContext.Database.ExecuteSqlRaw(sql);
+                            new NpgsqlCommand(sql, npgsqlConnection2).ExecuteNonQuery();
                         }
                     }
+
+                    npgsqlConnection2.Close();
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
+                finally
+                {
+                    npgsqlConnection2.Close();
                 }
             }
 
