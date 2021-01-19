@@ -167,7 +167,12 @@ namespace PsqlManagement.API.Controllers
                         }
                     }
 
-                    var pgUser = postgresDb.User.Substring(0, postgresDb.User.IndexOf('@'));
+                    var pgUser = postgresDb.User;
+                    if (pgUser.Contains("@"))
+                    {
+                        pgUser = pgUser.Substring(0, postgresDb.User.IndexOf('@'));
+                    }
+
                     new NpgsqlCommand($"GRANT \"{role}\" TO \"{pgUser}\";", npgsqlConnection).ExecuteNonQuery();
 
                     using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_roles WHERE rolname='{user}'", npgsqlConnection))
@@ -214,7 +219,10 @@ namespace PsqlManagement.API.Controllers
                 npgsqlConnection2.Open();
                 try
                 {
-                    user = user.Substring(0, user.IndexOf('@'));
+                    if (user.Contains("@"))
+                    {
+                        user = user.Substring(0, postgresDb.User.IndexOf('@'));
+                    }
 
                     if (postgresDb.Schemas != null && postgresDb.Schemas.Count > 0)
                     {
