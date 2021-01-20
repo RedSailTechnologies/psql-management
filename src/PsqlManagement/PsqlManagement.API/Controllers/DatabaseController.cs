@@ -204,14 +204,13 @@ namespace PsqlManagement.API.Controllers
                         var host = postgresDb.Host.Substring(0, postgresDb.Host.IndexOf(".postgres"));
                         user += $"@{host}";
                     }
+
+                    npgsqlConnection.Close();
                 }
                 catch (Exception e)
                 {
-                    throw e;
-                }
-                finally
-                {
                     npgsqlConnection.Close();
+                    throw e;
                 }
 
 
@@ -258,11 +257,8 @@ namespace PsqlManagement.API.Controllers
                 }
                 catch (Exception e)
                 {
-                    throw e;
-                }
-                finally
-                {
                     npgsqlConnection2.Close();
+                    throw e;
                 }
             }
 
