@@ -183,16 +183,20 @@ namespace PsqlManagement.API.Controllers
                         }
                     }
 
-                    if (!userExists)
+                    var commandType = "CREATE";
+                    if (userExists)
                     {
-                        new NpgsqlCommand($"CREATE ROLE \"{user}\" with LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}';", npgsqlConnection).ExecuteNonQuery();
-                        new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                        commandType = "UPDATE";
                     }
-                    else
+
+                    var privileges = $"LOGIN INHERIT CREATEDB CREATEROLE SUPERUSER NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
+                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
                     {
-                        new NpgsqlCommand($"ALTER USER \"{user}\" with LOGIN NOSUPERUSER CREATEDB CREATEROLE INHERIT NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}';", npgsqlConnection).ExecuteNonQuery();
-                        new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                        privileges = $"LOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
                     }
+
+                    new NpgsqlCommand($"{commandType} USER \"{user}\" with {privileges};", npgsqlConnection).ExecuteNonQuery();
+                    new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
 
                     if (!dbExists)
                     {
