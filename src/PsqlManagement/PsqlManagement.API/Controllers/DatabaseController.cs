@@ -183,10 +183,10 @@ namespace PsqlManagement.API.Controllers
                         }
                     }
 
-                    var commandType = "CREATE";
+                    var commandType = "CREATE ROLE";
                     if (userExists)
                     {
-                        commandType = "UPDATE";
+                        commandType = "ALTER USER";
                     }
 
                     var privileges = $"LOGIN INHERIT CREATEDB CREATEROLE SUPERUSER NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
@@ -195,7 +195,7 @@ namespace PsqlManagement.API.Controllers
                         privileges = $"LOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
                     }
 
-                    new NpgsqlCommand($"{commandType} USER \"{user}\" with {privileges};", npgsqlConnection).ExecuteNonQuery();
+                    new NpgsqlCommand($"{commandType} \"{user}\" with {privileges};", npgsqlConnection).ExecuteNonQuery();
                     new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
 
                     if (!dbExists)
