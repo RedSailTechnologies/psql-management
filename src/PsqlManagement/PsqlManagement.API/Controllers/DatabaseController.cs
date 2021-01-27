@@ -170,7 +170,7 @@ namespace PsqlManagement.API.Controllers
                     var pgUser = postgresDb.User;
                     if (pgUser.Contains("@"))
                     {
-                        pgUser = pgUser.Substring(0, postgresDb.User.IndexOf('@'));
+                        pgUser = pgUser.Substring(0, pgUser.IndexOf('@'));
                     }
 
                     new NpgsqlCommand($"GRANT \"{role}\" TO \"{pgUser}\";", npgsqlConnection).ExecuteNonQuery();
@@ -224,7 +224,7 @@ namespace PsqlManagement.API.Controllers
                 {
                     if (user.Contains("@"))
                     {
-                        user = user.Substring(0, postgresDb.User.IndexOf('@'));
+                        user = user.Substring(0, user.IndexOf('@'));
                     }
 
                     if (postgresDb.Schemas != null && postgresDb.Schemas.Count > 0)
