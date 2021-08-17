@@ -183,20 +183,26 @@ namespace PsqlManagement.API.Controllers
                         }
                     }
 
-                    var commandType = "CREATE ROLE";
-                    if (userExists)
-                    {
-                        commandType = "ALTER USER";
-                    }
-
+                    var commandType = userExists ? "ALTER" : "CREATE";
                     var privileges = $"LOGIN INHERIT CREATEDB CREATEROLE SUPERUSER NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
+
+                    // if azure, remove SUPERUSER
                     if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
                     {
-                        privileges = $"LOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
+                        privileges = privileges.Replace("SUPERUSER ", "");
                     }
 
-                    new NpgsqlCommand($"{commandType} \"{user}\" with {privileges};", npgsqlConnection).ExecuteNonQuery();
+                    // create or update user
+                    new NpgsqlCommand($"{commandType} USER \"{user}\" with {privileges};", npgsqlConnection).ExecuteNonQuery();
+                    
+                    // add user to role
                     new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                    
+                    // if azure, add user to azure_pg_admin role
+                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    {
+                        new NpgsqlCommand($"GRANT azure_pg_admin TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
+                    }
 
                     if (!dbExists)
                     {
