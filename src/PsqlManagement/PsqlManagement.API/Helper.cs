@@ -76,6 +76,7 @@ namespace PsqlManagement.API
                 + $"User Id={altUser ?? database.User};"
                 + $"Password={altPassword ?? database.Password};"
                 + $"Ssl Mode={database.SslMode};"
+                + $"Trust Server Certificate={database.TrustServerCertificate};"
                 + "Pooling=false;"
                 + "Command Timeout=120;"
                 + "Connection Idle Lifetime=150;";

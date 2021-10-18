@@ -60,6 +60,14 @@ namespace PsqlManagement.API.Models
         public string SslMode { get; set; }
 
         /// <summary>
+        /// Gets or sets the trust server certificate.
+        /// </summary>
+        /// <value>
+        /// The trust server certificate.
+        /// </value>
+        public string TrustServerCertificate { get; set; }
+
+        /// <summary>
         /// Gets or sets the user.
         /// </summary>
         /// <value>
