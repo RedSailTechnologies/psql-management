@@ -22,9 +22,9 @@
 
 using System;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using PsqlManagement.API.Models;
@@ -52,32 +52,19 @@ namespace PsqlManagement.API.Controllers
         /// <summary>
         /// Gets database.
         /// </summary>
-        /// <param name="postgresDb">The postgres db.</param>
+        /// <param name="database">The postgres db.</param>
         /// <returns></returns>
         [HttpGet]
-        public ActionResult<object> GetDatabase(PostgresDatabase postgresDb)
+        public ActionResult<object> GetDatabase(Database database)
         {
-            var errorText = Helper.ValidateDatabaseModel(postgresDb);
+            var errorText = Helper.ValidateDatabaseModel(database);
             if (!string.IsNullOrWhiteSpace(errorText))
             {
                 Response.StatusCode = 422;
                 return errorText;
             }
 
-            var dbExists = false;
-
-            var npgsqlConnection = new NpgsqlConnection(Helper.BuildConnectionString(postgresDb, altDatabase: "postgres"));
-            npgsqlConnection.Open();
-
-            using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_catalog.pg_database WHERE datname='{postgresDb.DatabaseName}'", npgsqlConnection))
-            {
-                using (var reader = cmd.ExecuteReader())
-                {
-                    dbExists = reader.HasRows;
-                }
-            }
-
-            npgsqlConnection.Close();
+            var dbExists = new Common().dbExists(database);
 
             if (dbExists)
             {
@@ -94,51 +81,34 @@ namespace PsqlManagement.API.Controllers
         /// <summary>
         /// Creates database.
         /// </summary>
-        /// <param name="postgresDb">The postgres db.</param>
+        /// <param name="database">The postgres db.</param>
         /// <returns></returns>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<object> CreateDatabase(PostgresDatabase postgresDb)
+        public ActionResult<object> CreateDatabase(CreateDatabase database)
         {
-            var errorText = Helper.ValidateDatabaseModel(postgresDb);
+            var errorText = Helper.ValidateDatabaseModel(database);
             if (!string.IsNullOrWhiteSpace(errorText))
             {
                 Response.StatusCode = 422;
                 return errorText;
             }
 
-            var dbExists = false;
+            var dbExists = new Common().dbExists(database);
 
-            var npgsqlConnection = new NpgsqlConnection(Helper.BuildConnectionString(postgresDb, altDatabase: "postgres"));
-            npgsqlConnection.Open();
-            try
+            if (!dbExists || (dbExists && database.ModifyExisting))
             {
-
-                using (var cmd = new NpgsqlCommand($"SELECT 1 FROM pg_catalog.pg_database WHERE datname='{postgresDb.DatabaseName}'", npgsqlConnection))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        dbExists = reader.HasRows;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                npgsqlConnection.Close();
-                throw e;
-            }
-
-            if (!dbExists || (dbExists && postgresDb.ModifyExisting))
-            {
-                var role = postgresDb.DatabaseName;
-                var user = postgresDb.DatabaseName;
+                var role = database.DatabaseName;
+                var user = database.DatabaseName;
+                var npgsqlConnection = new NpgsqlConnection(Helper.BuildConnectionString(database, altDatabase: "postgres"));
+                npgsqlConnection.Open();
                 try
                 {
                     var roleExists = false;
                     var userExists = false;
 
-                    if (postgresDb.DatabaseName.Any(char.IsUpper))
+                    if (database.DatabaseName.Any(char.IsUpper))
                     {
                         role += "_Role";
                     }
@@ -157,7 +127,7 @@ namespace PsqlManagement.API.Controllers
 
                     if (!roleExists)
                     {
-                        if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                        if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
                         {
                             new NpgsqlCommand($"CREATE ROLE \"{role}\" with NOLOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin;", npgsqlConnection).ExecuteNonQuery();
                         }
@@ -167,7 +137,7 @@ namespace PsqlManagement.API.Controllers
                         }
                     }
 
-                    var pgUser = postgresDb.User;
+                    var pgUser = database.User;
                     if (pgUser.Contains("@"))
                     {
                         pgUser = pgUser.Substring(0, pgUser.IndexOf('@'));
@@ -184,47 +154,47 @@ namespace PsqlManagement.API.Controllers
                     }
 
                     var commandType = userExists ? "ALTER" : "CREATE";
-                    var privileges = $"LOGIN INHERIT CREATEDB CREATEROLE SUPERUSER NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{postgresDb.NewUserPassword ?? postgresDb.Password}'";
+                    var privileges = $"LOGIN INHERIT CREATEDB CREATEROLE SUPERUSER NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{database.NewUserPassword ?? database.Password}'";
 
                     // if azure, remove SUPERUSER
-                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
                     {
                         privileges = privileges.Replace("SUPERUSER ", "");
                     }
 
                     // create or update user
                     new NpgsqlCommand($"{commandType} USER \"{user}\" with {privileges};", npgsqlConnection).ExecuteNonQuery();
-                    
+
                     // add user to role
                     new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
-                    
+
                     // if azure, add user to azure_pg_admin role
-                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
                     {
                         new NpgsqlCommand($"GRANT azure_pg_admin TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
                     }
 
                     if (!dbExists)
                     {
-                        new NpgsqlCommand($"CREATE DATABASE \"{postgresDb.DatabaseName}\" TEMPLATE template0 OWNER \"{role}\";", npgsqlConnection).ExecuteNonQuery();
+                        new NpgsqlCommand($"CREATE DATABASE \"{database.DatabaseName}\" TEMPLATE template0 OWNER \"{role}\";", npgsqlConnection).ExecuteNonQuery();
                     }
 
-                    if (!string.IsNullOrWhiteSpace(postgresDb.Platform) && postgresDb.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
                     {
-                        var host = postgresDb.Host.Substring(0, postgresDb.Host.IndexOf(".postgres"));
+                        var host = database.Host.Substring(0, database.Host.IndexOf(".postgres"));
                         user += $"@{host}";
                     }
 
                     npgsqlConnection.Close();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     npgsqlConnection.Close();
-                    throw e;
+                    throw;
                 }
 
 
-                var npgsqlConnection2 = new NpgsqlConnection(Helper.BuildConnectionString(postgresDb, altUser: user, altPassword: postgresDb.NewUserPassword ?? postgresDb.Password));
+                var npgsqlConnection2 = new NpgsqlConnection(Helper.BuildConnectionString(database, altUser: user, altPassword: database.NewUserPassword ?? database.Password));
                 npgsqlConnection2.Open();
                 try
                 {
@@ -233,31 +203,31 @@ namespace PsqlManagement.API.Controllers
                         user = user.Substring(0, user.IndexOf('@'));
                     }
 
-                    if (postgresDb.Schemas != null && postgresDb.Schemas.Count > 0)
+                    if (database.Schemas != null && database.Schemas.Count > 0)
                     {
-                        foreach (var schema in postgresDb.Schemas)
+                        foreach (var schema in database.Schemas)
                         {
                             new NpgsqlCommand($"CREATE SCHEMA IF NOT EXISTS \"{schema}\";", npgsqlConnection2).ExecuteNonQuery();
                             new NpgsqlCommand($"GRANT ALL PRIVILEGES ON SCHEMA \"{schema}\" to \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
                         }
                     }
 
-                    new NpgsqlCommand($"ALTER DATABASE \"{postgresDb.DatabaseName}\" OWNER TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
-                    new NpgsqlCommand($"GRANT ALL PRIVILEGES ON DATABASE \"{postgresDb.DatabaseName}\" TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
+                    new NpgsqlCommand($"ALTER DATABASE \"{database.DatabaseName}\" OWNER TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
+                    new NpgsqlCommand($"GRANT ALL PRIVILEGES ON DATABASE \"{database.DatabaseName}\" TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
                     new NpgsqlCommand($"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
                     new NpgsqlCommand($"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
                     new NpgsqlCommand($"GRANT ALL PRIVILEGES ON SCHEMA public to \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
 
                     new NpgsqlCommand($"REASSIGN OWNED BY \"{user}\" TO \"{role}\";", npgsqlConnection2).ExecuteNonQuery();
 
-                    if (postgresDb.RevokePublicAccess)
+                    if (database.RevokePublicAccess)
                     {
-                        new NpgsqlCommand($"REVOKE ALL ON DATABASE \"{postgresDb.DatabaseName}\" FROM PUBLIC CASCADE;", npgsqlConnection2).ExecuteNonQuery();
+                        new NpgsqlCommand($"REVOKE ALL ON DATABASE \"{database.DatabaseName}\" FROM PUBLIC CASCADE;", npgsqlConnection2).ExecuteNonQuery();
                     }
 
-                    if (postgresDb.AdditionalSqlCommands != null && postgresDb.AdditionalSqlCommands.Count > 0)
+                    if (database.AdditionalSqlCommands != null && database.AdditionalSqlCommands.Count > 0)
                     {
-                        foreach (var sql in postgresDb.AdditionalSqlCommands)
+                        foreach (var sql in database.AdditionalSqlCommands)
                         {
                             new NpgsqlCommand(sql, npgsqlConnection2).ExecuteNonQuery();
                         }
@@ -265,14 +235,14 @@ namespace PsqlManagement.API.Controllers
 
                     npgsqlConnection2.Close();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     npgsqlConnection2.Close();
-                    throw e;
+                    throw;
                 }
             }
 
-            return CreatedAtAction(nameof(GetDatabase), new { postgresDb = postgresDb }, postgresDb.DatabaseName);
+            return CreatedAtAction(nameof(GetDatabase), new { database = database }, database.DatabaseName);
         }
     }
 }

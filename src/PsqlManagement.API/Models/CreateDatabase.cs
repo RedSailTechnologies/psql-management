@@ -25,65 +25,10 @@ using System.Collections.Generic;
 namespace PsqlManagement.API.Models
 {
     /// <summary>
-    /// Postgres Database.
+    /// Create Database.
     /// </summary>
-    public class PostgresDatabase : IDatabase
+    public class CreateDatabase : Database
     {
-        /// <summary>
-        /// Gets or sets the platform.
-        /// </summary>
-        /// <value>
-        /// The platform.
-        /// </value>
-        public string Platform { get; set; }
-
-        /// <summary>
-        /// Gets or sets the host.
-        /// </summary>
-        /// <value>
-        /// The host.
-        /// </value>
-        public string Host { get; set; }
-
-        /// <summary>
-        /// Gets or sets the port.
-        /// </summary>
-        /// <value>
-        /// The port.
-        /// </value>
-        public int Port { get; set; } = 5432;
-
-        /// <summary>
-        /// Gets or sets the ssl mode.
-        /// </summary>
-        /// <value>
-        /// The ssl mode.
-        /// </value>
-        public string SslMode { get; set; } = "Prefer";
-
-        /// <summary>
-        /// Gets or sets the trust server certificate.
-        /// </summary>
-        /// <value>
-        /// The trust server certificate.
-        /// </value>
-        public string TrustServerCertificate { get; set; } = "true";
-
-        /// <summary>
-        /// Gets or sets the user.
-        /// </summary>
-        /// <value>
-        /// The user.
-        /// </value>
-        public string User { get; set; }
-
-        /// <summary>
-        /// Gets or sets the password.
-        /// </summary>
-        /// <value>
-        /// The password.
-        /// </value>
-        public string Password { get; set; }
 
         /// <summary>
         /// Gets or sets the new user password.
@@ -92,14 +37,6 @@ namespace PsqlManagement.API.Models
         /// The new user password.
         /// </value>
         public string NewUserPassword { get; set; }
-
-        /// <summary>
-        /// Gets or sets the database name.
-        /// </summary>
-        /// <value>
-        /// The database name.
-        /// </value>
-        public string DatabaseName { get; set; }
 
         /// <summary>
         /// Gets or sets the schemas.
