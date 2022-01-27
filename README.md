@@ -30,6 +30,34 @@ JSON Body:
 }
 ```
 
+## Run Query (No Results) 
+POST: https://sample.url.com:5301/query  
+Authentication: Disabled  
+JSON Body:
+```
+{
+    "Host": "localhost:55432",
+    "User": "postgres",
+    "Password": "mysecretpassword",
+    "DatabaseName": "jaws",
+    "QueryString": "CREATE TABLE IF NOT EXISTS public.movies(title varchar NULL, year int NULL); INSERT INTO public.movies(title, year) VALUES ('Jaws', 1975); INSERT INTO public.movies(title, year) VALUES ('Jaws 2', 1978); INSERT INTO public.movies(title, year) VALUES ('Jaws 3-D', 1983);"
+}
+```
+
+## Get Data (Results as JSON)
+GET: https://sample.url.com:5301/query  
+Authentication: Disabled  
+JSON Body:
+```
+{
+    "Host": "localhost:55432",
+    "User": "postgres",
+    "Password": "mysecretpassword",
+    "DatabaseName": "jaws",
+    "QueryString": "SELECT * FROM public.movies;"
+}
+```
+
 # Considerations
 
 ## Verifying
