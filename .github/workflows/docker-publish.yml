@@ -27,7 +27,7 @@ jobs:
 
       - name: Run tests
         run: docker build . --file Dockerfile
-        working-directory: ./src/PsqlManagement
+        working-directory: ./src
 
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
@@ -43,11 +43,11 @@ jobs:
 
       - name: Build image
         run: docker build . --target release --file Dockerfile --tag $IMAGE_NAME
-        working-directory: ./src/PsqlManagement
+        working-directory: ./src
 
       - name: Log into registry
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-        working-directory: ./src/PsqlManagement
+        working-directory: ./src
 
       - name: Push image
         run: |
@@ -70,4 +70,4 @@ jobs:
 
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-        working-directory: ./src/PsqlManagement
+        working-directory: ./src

@@ -9,9 +9,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/PsqlManagement/PsqlManagement.API/bin/Debug/netcoreapp3.1/PsqlManagement.API.dll",
+            "program": "${workspaceFolder}/src/PsqlManagement.API/bin/Debug/netcoreapp3.1/PsqlManagement.API.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/PsqlManagement/PsqlManagement.API",
+            "cwd": "${workspaceFolder}/src/PsqlManagement.API",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
