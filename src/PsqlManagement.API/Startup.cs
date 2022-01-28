@@ -25,6 +25,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using Prometheus;
+using PsqlManagement.API;
 
 namespace PsqlManagement
 {
@@ -59,6 +62,10 @@ namespace PsqlManagement
         {
             services.AddHealthChecks();
             services.AddControllers();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "PsqlManagement", Version = "v1" });
+            });
         }
 
         /// <summary>
@@ -68,20 +75,25 @@ namespace PsqlManagement
         /// <param name="env">The env.</param>
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            if (env.IsDevelopment() || Helper.EnableSwagger())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "PsqlManagement v1"));
+            }
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
-
             app.UseRouting();
 
-            app.UseAuthorization();
+            app.UseHttpMetrics();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHealthChecks("/health");
+                endpoints.MapMetrics("/metrics");
                 endpoints.MapControllers();
             });
         }

@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
 using PsqlManagement.API.Models;
 
 namespace PsqlManagement.API
@@ -29,6 +30,16 @@ namespace PsqlManagement.API
     /// </summary>
     public static class Helper
     {
+        /// <summary>
+        /// Enables swagger.
+        /// </summary>
+        /// <returns></returns>
+        public static bool EnableSwagger()
+        {
+            bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_SWAGGER"), out bool enableSwagger);
+            return enableSwagger;
+        }
+
         /// <summary>
         /// Validates database model.
         /// </summary>
