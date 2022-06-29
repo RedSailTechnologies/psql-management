@@ -69,5 +69,13 @@ namespace PsqlManagement.API.Models
         /// The additional sql commands.
         /// </value>
         public List<string> AdditionalSqlCommands { get; set; }
+
+        /// <summary>
+        /// Gets or sets the url decode additional sql commands bool.
+        /// </summary>
+        /// <value>
+        /// The url decode additional sql commands bool.
+        /// </value>
+        public bool UrlDecodeAdditionalSqlCommands { get; set; }
     }
 }

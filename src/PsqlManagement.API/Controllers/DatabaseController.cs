@@ -22,6 +22,7 @@
 
 using System;
 using System.Linq;
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -229,7 +230,8 @@ namespace PsqlManagement.API.Controllers
                     {
                         foreach (var sql in database.AdditionalSqlCommands)
                         {
-                            new NpgsqlCommand(sql, npgsqlConnection2).ExecuteNonQuery();
+                            var queryString = database.UrlDecodeAdditionalSqlCommands ? WebUtility.UrlDecode(sql) : sql;
+                            new NpgsqlCommand(queryString, npgsqlConnection2).ExecuteNonQuery();
                         }
                     }
 
