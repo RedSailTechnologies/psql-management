@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -78,7 +79,8 @@ namespace PsqlManagement.API.Controllers
 
                 try
                 {
-                    var q = new NpgsqlCommand(query.QueryString, npgsqlConnection);
+                    var queryString = query.UrlDecodeQueryString ? WebUtility.UrlDecode(query.QueryString) : query.QueryString;
+                    var q = new NpgsqlCommand(queryString, npgsqlConnection);
                     var dataReader = q.ExecuteReader();
                     while (dataReader.Read())
                     {
@@ -142,7 +144,8 @@ namespace PsqlManagement.API.Controllers
 
                 try
                 {
-                    new NpgsqlCommand(query.QueryString, npgsqlConnection).ExecuteNonQuery();
+                    var queryString = query.UrlDecodeQueryString ? WebUtility.UrlDecode(query.QueryString) : query.QueryString;
+                    new NpgsqlCommand(queryString, npgsqlConnection).ExecuteNonQuery();
                     return StatusCodes.Status202Accepted;
                 }
                 catch

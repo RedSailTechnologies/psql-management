@@ -44,6 +44,21 @@ JSON Body:
 }
 ```
 
+## Run Query with URL Decode (No Results) 
+POST: https://sample.url.com:5301/query  
+Authentication: Disabled  
+JSON Body:
+```
+{
+    "Host": "localhost:55432",
+    "User": "postgres",
+    "Password": "mysecretpassword",
+    "DatabaseName": "jaws",
+    "QueryString": "CREATE EXTENSION IF NOT EXISTS citext;CREATE EXTENSION IF NOT EXISTS %22uuid-ossp%22;",
+    "UrlDecodeQueryString": true
+}
+```
+
 ## Get Data (Results as JSON)
 GET: https://sample.url.com:5301/query  
 Authentication: Disabled  

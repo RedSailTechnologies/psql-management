@@ -37,5 +37,13 @@ namespace PsqlManagement.API.Models
         /// The query string.
         /// </value>
         public string QueryString { get; set; }
+
+        /// <summary>
+        /// Gets or sets the url decode query string bool.
+        /// </summary>
+        /// <value>
+        /// The url decode query string bool.
+        /// </value>
+        public bool UrlDecodeQueryString { get; set; }
     }
 }
