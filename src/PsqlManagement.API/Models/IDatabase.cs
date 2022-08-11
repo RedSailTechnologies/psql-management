@@ -90,5 +90,13 @@ namespace PsqlManagement.API.Models
         /// The database name.
         /// </value>
         public string DatabaseName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command timeout.
+        /// </summary>
+        /// <value>
+        /// The command timeout.
+        /// </value>
+        public int CommandTimeout { get; set; }
     }
 }

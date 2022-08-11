@@ -89,7 +89,7 @@ namespace PsqlManagement.API
                 + $"Ssl Mode={database.SslMode};"
                 + $"Trust Server Certificate={database.TrustServerCertificate};"
                 + "Pooling=false;"
-                + "Command Timeout=120;"
+                + $"Command Timeout={database.CommandTimeout};"
                 + "Connection Idle Lifetime=150;";
             return connectionString;
         }

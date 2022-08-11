@@ -111,6 +111,19 @@ By default, the Port is `5432`.  To change this, include an element in the JSON 
 }
 ```
 
+## Command Timeout
+By default, the Command Timeout is `120` (seconds).  To change this, include an element in the JSON body named `CommandTimeout` and set the desired value.  
+```
+{
+    "Host": "sample.url.com",
+    "User": "user-name",
+    "Password": "user-name-password",
+    "NewUserPassword": "new-user-password",
+    "DatabaseName": "Jaws",
+    "CommandTimeout": 600
+}
+```
+
 ## SSL Mode
 By default, the SSL Mode is `Prefer`.  To change this, include an element in the JSON body named `SslMode` and set the value to a valid PostgreSQL value (i.e. `Disable`, `Allow`, `Prefer`, or `Require`).  
 ```
