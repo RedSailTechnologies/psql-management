@@ -128,7 +128,7 @@ namespace PsqlManagement.API.Controllers
 
                     if (!roleExists)
                     {
-                        if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                        if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.StartsWith("Azure", StringComparison.OrdinalIgnoreCase))
                         {
                             new NpgsqlCommand($"CREATE ROLE \"{role}\" with NOLOGIN INHERIT CREATEDB CREATEROLE IN ROLE azure_pg_admin;", npgsqlConnection).ExecuteNonQuery();
                         }
@@ -158,7 +158,7 @@ namespace PsqlManagement.API.Controllers
                     var privileges = $"LOGIN INHERIT CREATEDB CREATEROLE SUPERUSER NOREPLICATION CONNECTION LIMIT -1 PASSWORD '{database.NewUserPassword ?? database.Password}'";
 
                     // if azure, remove SUPERUSER
-                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.StartsWith("Azure", StringComparison.OrdinalIgnoreCase))
                     {
                         privileges = privileges.Replace("SUPERUSER ", "");
                     }
@@ -170,7 +170,7 @@ namespace PsqlManagement.API.Controllers
                     new NpgsqlCommand($"GRANT \"{role}\" TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
 
                     // if azure, add user to azure_pg_admin role
-                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(database.Platform) && database.Platform.StartsWith("Azure", StringComparison.OrdinalIgnoreCase))
                     {
                         new NpgsqlCommand($"GRANT azure_pg_admin TO \"{user}\";", npgsqlConnection).ExecuteNonQuery();
                     }

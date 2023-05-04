@@ -82,9 +82,10 @@ All `POST` commands use the `GET` methods to ensure the objects have been insert
 If no password is provided for the new database user, the password for the originating user will be duplicated and used.  
 
 ## Platform
-By default, the platform is self-hosted.  Currently, self-hosted and Azure are the only supported platforms values.  To specify, include an element in the JSON body named `Platform` and set the desired value.  
+By default, the platform is self-hosted.  Currently, self-hosted, AzureFlex, and Azure are the only supported platforms values.  To specify, include an element in the JSON body named `Platform` and set the desired value.  
 * Self-hosted platforms will create the new new database role as a `SUPERUSER`.  
-* Azure platforms will create the role in the `azure_pg_admin` role and will ensure the new username is formatted properly when creating the database (`databasename@host`).  
+* AzureFlex platforms will create the role in the `azure_pg_admin` role.
+* Azure platforms will create the role in the `azure_pg_admin` role and will ensure the new username is formatted properly when creating the database (`databasename@host`).    
 
 _NOTE: Omitting the `Platform` object will default to self-hosted._
 ```
