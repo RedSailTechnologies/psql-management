@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/PsqlManagement.API/bin/Debug/netcoreapp6.0/PsqlManagement.API.dll",
+            "program": "${workspaceFolder}/src/PsqlManagement.API/bin/Debug/netcoreapp8.0/PsqlManagement.API.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/PsqlManagement.API",
             "stopAtEntry": false,
