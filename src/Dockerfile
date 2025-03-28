@@ -1,13 +1,13 @@
 ARG DOTNET_VERSION=8.0
 
-FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS base
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-alpine AS base
 WORKDIR /source
 COPY PsqlManagement.API/*.csproj .
 RUN dotnet restore
 COPY PsqlManagement.API .
 
 
-FROM base as build
+FROM base AS build
 WORKDIR /source
 RUN dotnet build -c Release --no-restore
 
